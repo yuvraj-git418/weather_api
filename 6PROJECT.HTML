@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Awesome Weather Page 🌦️</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+  /* Basic reset */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    background: linear-gradient(to top, #0f2027, #203a43, #2c5364);
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  h1 {
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+  }
+
+  #weather-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 30px 50px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    max-width: 350px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+  }
+
+  #location {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  #temp {
+    font-size: 5rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+  }
+
+  #desc {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+    font-style: italic;
+    letter-spacing: 0.05em;
+    text-transform: capitalize;
+  }
+
+  #icon {
+    font-size: 5rem;
+    margin-bottom: 20px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  /* Float animation for icon */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+  }
+
+  /* Input & button */
+  #input-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  input[type="text"] {
+    padding: 10px 15px;
+    border-radius: 50px;
+    border: none;
+    width: 200px;
+    font-size: 1rem;
+    outline: none;
+  }
+
+  button {
+    background: #00bfff;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 50px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  button:hover {
+    background: #0080ff;
+  }
+
+  /* Raindrops animation */
+  .raindrop {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    animation-name: fall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+  }
+
+  @keyframes fall {
+    0% {
+      transform: translateY(-100px);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(500px);
+      opacity: 0;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h1>🌦️ Dynamic Weather Visualizer</h1>
+
+<div id="weather-card">
+  <div id="location">Loading...</div>
+  <div id="icon">⛅</div>
+  <div id="temp">--°C</div>
+  <div id="desc">Please enter a city</div>
+
+  <div id="input-container">
+    <input type="text" id="city-input" placeholder="Enter city name" />
+    <button id="search-btn">Search</button>
+  </div>
+</div>
+
+<script>
+  // Your OpenWeatherMap API key here (replace with your own)
+  const API_KEY = '626c090023bb5e5055f85b908d6b21cc';
+
+  const locationEl = document.getElementById('location');
+  const tempEl = document.getElementById('temp');
+  const descEl = document.getElementById('desc');
+  const iconEl = document.getElementById('icon');
+  const searchBtn = document.getElementById('search-btn');
+  const cityInput = document.getElementById('city-input');
+  const weatherCard = document.getElementById('weather-card');
+
+  function getWeather(city) {
+    if(!city) return;
+
+    locationEl.textContent = 'Loading...';
+    tempEl.textContent = '--°C';
+    descEl.textContent = '';
+
+    fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${API_KEY}&units=metric`)
+      .then(res => {
+        if(!res.ok) throw new Error('City not found');
+        return res.json();
+      })
+      .then(data => {
+        const { name } = data;
+        const { temp } = data.main;
+        const { description, main } = data.weather[0];
+
+        locationEl.textContent = name;
+        tempEl.textContent = Math.round(temp) + '°C';
+        descEl.textContent = description;
+
+        // Choose icon and background effect based on weather main description
+        switch(main.toLowerCase()) {
+          case 'clear':
+            iconEl.textContent = '☀️';
+            setBackgroundGradient(['#f7971e', '#ffd200']);
+            clearEffects();
+            break;
+          case 'clouds':
+            iconEl.textContent = '☁️';
+            setBackgroundGradient(['#bdc3c7', '#2c3e50']);
+            clearEffects();
+            break;
+          case 'rain':
+          case 'drizzle':
+            iconEl.textContent = '🌧️';
+            setBackgroundGradient(['#4e54c8', '#8f94fb']);
+            createRainEffect();
+            break;
+          case 'thunderstorm':
+            iconEl.textContent = '⛈️';
+            setBackgroundGradient(['#141e30', '#243b55']);
+            createRainEffect();
+            break;
+          case 'snow':
+            iconEl.textContent = '❄️';
+            setBackgroundGradient(['#83a4d4', '#b6fbff']);
+            createSnowEffect();
+            break;
+          case 'mist':
+          case 'fog':
+            iconEl.textContent = '🌫️';
+            setBackgroundGradient(['#757f9a', '#d7dde8']);
+            clearEffects();
+            break;
+          default:
+            iconEl.textContent = '🌈';
+            setBackgroundGradient(['#667eea', '#764ba2']);
+            clearEffects();
+        }
+      })
+      .catch(err => {
+        locationEl.textContent = 'City not found';
+        tempEl.textContent = '--°C';
+        descEl.textContent = '';
+        iconEl.textContent = '❓';
+        clearEffects();
+      });
+  }
+
+  // Background gradient changer
+  function setBackgroundGradient(colors) {
+    document.body.style.background = `linear-gradient(to top, ${colors.join(',')})`;
+  }
+
+  // Clear any previous effects
+  function clearEffects() {
+    // Remove raindrops or snowflakes
+    const drops = document.querySelectorAll('.raindrop, .snowflake');
+    drops.forEach(drop => drop.remove());
+  }
+
+  // Create rain effect
+  function createRainEffect() {
+    clearEffects();
+    for(let i=0; i<50; i++) {
+      const drop = document.createElement('div');
+      drop.classList.add('raindrop');
+      drop.style.width = '2px';
+      drop.style.height = '15px';
+      drop.style.left = Math.random() * window.innerWidth + 'px';
+      drop.style.top = Math.random() * -500 + 'px';
+      drop.style.animationDuration = (Math.random() * 1 + 0.5) + 's';
+      weatherCard.appendChild(drop);
+    }
+  }
+
+  // Create snow effect
+  function createSnowEffect() {
+    clearEffects();
+    for(let i=0; i<40; i++) {
+      const snowflake = document.createElement('div');
+      snowflake.classList.add('raindrop');
+      snowflake.style.width = '8px';
+      snowflake.style.height = '8px';
+      snowflake.style.borderRadius = '50%';
+      snowflake.style.background = 'white';
+      snowflake.style.opacity = 0.8;
+      snowflake.style.left = Math.random() * window.innerWidth + 'px';
+      snowflake.style.top = Math.random() * -500 + 'px';
+      snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
+      weatherCard.appendChild(snowflake);
+    }
+  }
+
+  // Initial load: get weather for default city
+  getWeather('New York');
+
+  searchBtn.addEventListener('click', () => {
+    const city = cityInput.value.trim();
+    if(city) getWeather(city);
+  });
+
+  cityInput.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') {
+      searchBtn.click();
+    }
+  });
+</script>
+
+</body>
+</html>
