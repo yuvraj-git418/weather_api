@@ -103,7 +103,7 @@
     font-weight: 700;
     color: white;
     cursor: pointer;
-    transition: background 0.3s ease;
+    transition: background 0.4s ease;
   }
 
   button:hover {
@@ -163,6 +163,7 @@
   function getWeather(city) {
     if(!city) return;
 
+// modify by .....
     locationEl.textContent = 'Loading...';
     tempEl.textContent = '--°C';
     descEl.textContent = '';
